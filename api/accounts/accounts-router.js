@@ -5,7 +5,6 @@ const router = express.Router();
 
 //get all accounts
 router.get('/', (req, res) => {
-    // db.raw('SELECT * from accounts')
     db('accounts')
     .then(accts => {
         res.json(accts)
@@ -17,16 +16,18 @@ router.get('/', (req, res) => {
 })
 
 //get account by id
-router.get('/:id', (req, res) => {
-    db('accounts').where({id: req.params.id})
+router.get('/:id', async (req, res) => { 
+    try {
+        const [existingAcct] = await db('accounts').where({id: req.params.id})
 
-    .then(accts => {
-        res.status(200).json(accts)
-    })
-    .catch(err => {
-        console.log(err)
+        if (existingAcct) {
+            res.json(existingAcct)
+        } else {
+            res.status(404).json({message: 'account does not exist'})
+        }
+    } catch (err) {
         res.status(500).json({message: 'database error', error: err})
-    })
+    } 
 })
 
 //create new account
@@ -44,41 +45,43 @@ router.post('/', (req, res) => {
 })
 
 //edit account by id
-router.put('/:id', (req, res) => {
-    const changes = req.body;
+router.put('/:id', async (req, res) => {
     const {id} = req.params;
+    const changes = req.body;
 
-    const verifiedChange = db('accounts').update(changes).where({id})
-    .then(edits => {
+    try {
+        const verifiedChange = await db('accounts').update(changes).where({id});
+
         if (verifiedChange) {
-            res.status(200).json({updated: verifiedChange})
+            res.json({updated: verifiedChange});
+            console.log(error)
         } else {
-            res.status(404).json({message: 'account does not exist'})
+            res.status(404).json({message: 'Account does not exist'})
         }
-    })
-    .catch(err => {
-        console.log(err)
+        
+    } catch (err) {
         res.status(500).json({message: 'database error', error: err})
-    })
-})
+        console.log(err)
+    }
+});
 
 //delete account by id
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
     const {id} = req.params;
 
-    const acctToDelete = db('accounts').where({id}).del()
+    try {
+        const acctToDelete = await db('accounts').where({id}).del()
 
-    .then(acct => {
         if (acctToDelete) {
-            res.status(200).json({deleted: acctToDelete})
+            res.json({deleted: acctToDelete});
         } else {
-            res.status(404).json({message: 'account does not exist'})
+            res.status(404).json({message: 'Account does not exist'})
         }
-    })
-    .catch(err => {
-        console.log(err)
+        
+    } catch (err) {
         res.status(500).json({message: 'database error', error: err})
-    })
-})
+        console.log(err)
+    }
+});
 
 module.exports = router;
