@@ -4,15 +4,62 @@ const router = express.Router();
 
 
 //get all accounts
-router.get('/', (req, res) => {
-    db('accounts')
-    .then(accts => {
-        res.json(accts)
-    })
-    .catch(err => {
-        console.log(err)
-        res.status(500).json({message: 'database error', error: err})
-    })
+// router.get('/', (req, res) => {
+//     const {limit} = req.query;
+//     console.log(limit)
+//     db('accounts')
+//     .then(accts => {
+//         res.json(accts)
+//     })
+//     .catch(err => {
+//         console.log(err)
+//         res.status(500).json({message: 'database error', error: err})
+//     })
+// })
+
+//get requests refactored to include query string options
+router.get('/', async (req, res) => {
+    let {limit} = req.query;
+    let {sortby} = req.query;
+    let {sortdir} = req.query;
+
+    if (limit) {
+        try {
+            // http://localhost:5000/api/accounts?limit=5
+            const limited = await db.raw(`SELECT * FROM accounts LIMIT ${limit};`)
+            res.json(limited)
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({message: 'server error', error: err})
+        }
+    } if (sortby) {
+        try {
+            // http://localhost:5000/api/accounts?sortby=budget
+            const sorted = await db.raw(`SELECT * FROM accounts ORDER BY ${sortby};`)
+            res.json(sorted)
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({message: 'server error', error: err})
+        }
+    }  if (sortdir) {
+        try {
+            // http://localhost:5000/api/accounts?sortdir=DESC
+            const sortUpDown = await db.raw(`SELECT * FROM accounts ORDER BY budget ${sortdir};`)
+            res.json(sortUpDown)
+        } catch (error) {
+            console.log(error)
+            res.status(500).json({message: 'server error', error: err})
+        } 
+        } else {
+            try {
+                const allAccts = db('accounts')
+                res.json(allAccts)
+                
+            } catch (err) {
+                res.status(500).json({message: 'server error', error: err})
+            }
+    }
+    
 })
 
 //get account by id
